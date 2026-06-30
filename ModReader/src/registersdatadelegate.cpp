@@ -5,6 +5,8 @@
 #include <QPainter>
 #include <QSpinBox>
 #include <QLineEdit>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 #include "eutils.h"
 
@@ -36,8 +38,8 @@ QWidget *RegistersDataDelegate::createEditor(QWidget *parent,
     }
     else if (m_base == 10) {//Dec
             QLineEdit *editor = new QLineEdit(parent);
-            QRegExp rx("-{0,1}[0-9]{1,5}");
-            QValidator *validator = new QRegExpValidator(rx);
+            QRegularExpression rx("-{0,1}[0-9]{1,5}");
+            QValidator *validator = new QRegularExpressionValidator(rx, editor);
             editor->setValidator(validator);
             return editor;
     }
@@ -48,8 +50,8 @@ QWidget *RegistersDataDelegate::createEditor(QWidget *parent,
     }
     else {//Default = Dec
             QLineEdit *editor = new QLineEdit(parent);
-            QRegExp rx("-{0,1}[0-9]{1,5}");
-            QValidator *validator = new QRegExpValidator(rx);
+            QRegularExpression rx("-{0,1}[0-9]{1,5}");
+            QValidator *validator = new QRegularExpressionValidator(rx, editor);
             editor->setValidator(validator);
             return editor;
     }

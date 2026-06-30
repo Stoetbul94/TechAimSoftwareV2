@@ -1,4 +1,4 @@
-import QtQuick 2.2
+import QtQuick 2.15
 Item {
     property int rootItemWidth:1366
     property int rootItemHeight:45
@@ -7,119 +7,81 @@ Item {
 
     Rectangle {
         id: fullRect
-        color: "#202020"
+        color: "#11161c"
         anchors.fill: parent
+        border.color: "#2b343e"
+        border.width: 1
     }
 
-    Image {
-        id: bg
-        source: "qrc:/images/header/bg.png"
-        x: ((parent.width/rootItemWidth)*0)
-        y: ((parent.height/rootItemHeight)*0)
-        opacity: 1
-        anchors.fill:parent
-        //fillMode: Image.PreserveAspectFit
-    }
-    Image {
+    Rectangle {
         id: minimizeButton
-        source: "qrc:/images/header/minimize.png"
-        x: ((parent.width/rootItemWidth)*1258)
-        y: ((parent.height/rootItemHeight)*5)
-        opacity: 1
-        fillMode: Image.PreserveAspectFit
+        width: 42
+        height: 30
+        radius: 7
+        color: minimizeMouse.containsMouse ? "#2b343e" : "transparent"
+        anchors.right: closeButton.left
+        anchors.rightMargin: 7
+        anchors.verticalCenter: parent.verticalCenter
+
+        Text {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: -4
+            text: "–"
+            color: "#c5ced8"
+            font.pixelSize: 24
+        }
 
         MouseArea {
+            id: minimizeMouse
             anchors.fill: parent
+            hoverEnabled: true
             onClicked: minimize()
         }
     }
-    Image {
+    Rectangle {
         id: closeButton
-        source: "qrc:/images/header/close.png"
-        x: ((parent.width/rootItemWidth)*1304)
-        y: ((parent.height/rootItemHeight)*5)
-        opacity: 1
-        fillMode: Image.PreserveAspectFit
+        width: 42
+        height: 30
+        radius: 7
+        color: closeMouse.containsMouse ? "#b90042" : "transparent"
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+
+        Text {
+            anchors.centerIn: parent
+            text: "×"
+            color: "white"
+            font.pixelSize: 23
+        }
 
         MouseArea {
+            id: closeMouse
             anchors.fill: parent
+            hoverEnabled: true
             onClicked: close()
         }
     }
     Text {
         id: heading
-        anchors.left: parent.left
-        anchors.leftMargin: 10
+      //  anchors.left: parent.left
+       // anchors.leftMargin: 10
         height: implicitHeight
+        anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        color: "white"
-        text: isDefaultIcon ? "SHOOT ON TACHUS" : "SHOOT ON SETA"
-        font { family: "Luxi Mono"; pixelSize: 24; capitalization: Font.AllUppercase }
+        color: "#e9eef4"
+        text: APPSETTINGS.getBrandDisplayName() + "  •  ELECTRONIC TARGET"
+        font.pixelSize: 14
+        font.weight: Font.DemiBold
+        font.letterSpacing: 1.1
     }
-
-//    Rectangle {
-//        property string myText: "The quick brown fox jumps over the lazy dog."
-
-//           width: 320; height: 480
-//           color: "steelblue"
-
-//           FontLoader { id: fixedFont; name: "Courier" }
-//           FontLoader { id: localFont; source: "content/fonts/tarzeau_ocr_a.ttf" }
-//           FontLoader { id: webFont; source: "http://www.princexml.com/fonts/steffmann/Starburst.ttf" }
-
-//           Column {
-//               anchors { fill: parent; leftMargin: 10; rightMargin: 10; topMargin: 10 }
-//               spacing: 15
-
-//               Text {
-//                   text: "test"
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   wrapMode: Text.WordWrap
-//                   font.family: "Times"
-//                   font.pixelSize: 20
-//               }
-//               Text {
-//                   text: "test1"
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   wrapMode: Text.WordWrap
-//                   horizontalAlignment: Text.AlignHCenter
-//                   font { family: "Times"; pixelSize: 20; capitalization: Font.AllUppercase }
-//               }
-//               Text {
-//                   text: "test2"
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   horizontalAlignment: Text.AlignRight
-//                   wrapMode: Text.WordWrap
-//                   font { family: fixedFont.name; pixelSize: 20; weight: Font.Bold; capitalization: Font.AllLowercase }
-//               }
-//               Text {
-//                   text: "test3"
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   wrapMode: Text.WordWrap
-//                   font { family: fixedFont.name; pixelSize: 20; italic: true; capitalization: Font.SmallCaps }
-//               }
-//               Text {
-//                   text: "test4"
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   wrapMode: Text.WordWrap
-//                   font { family: localFont.name; pixelSize: 20; capitalization: Font.Capitalize }
-//               }
-//               Text {
-//                   text: {
-//                       if (webFont.status == FontLoader.Ready) "test5"
-//                       else if (webFont.status == FontLoader.Loading) "Loading..."
-//                       else if (webFont.status == FontLoader.Error) "Error loading font"
-//                   }
-//                   color: "lightsteelblue"
-//                   width: parent.width
-//                   wrapMode: Text.WordWrap
-//                   font.family: webFont.name; font.pixelSize: 20
-//               }
-//           }
-//    }
+    Text {
+        anchors.right: closeButton.left
+        anchors.rightMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
+        text: typeof TECHAIM_BUILD !== "undefined" ? TECHAIM_BUILD : ""
+        color: "#4a5560"
+        font.pixelSize: 9
+        visible: text !== ""
+    }
 }

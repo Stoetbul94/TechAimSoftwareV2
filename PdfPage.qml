@@ -6,8 +6,12 @@ Item {
     height: 842 // A4 sixe for 72 dpi
 
     property int pageIndex: 0
-    property string title: "Page " + pageIndex
+    property string title: appMode ? qsTr("Page ") + pageIndex : qsTr("Page ") + pageIndex + qsTr(" DEMO")
     property var sourceComp: null
+
+    onVisibleChanged: {
+        console.log("Pdf page visible ", visible)
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -24,11 +28,35 @@ Item {
             color: "black"
         }
 
+        Image {
+            id: reportLogo
+            source: APPSETTINGS.getBrandLogo()
+            anchors.top: parent.top
+            anchors.topMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            width: 115
+            height: 36
+            fillMode: Image.PreserveAspectFit
+        }
+        Text {
+            id: demoText
+            width: implicitWidth
+            height: reportLogo.height/2
+            anchors.top: reportLogo.bottom
+            anchors.topMargin: 2
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            text: "DEMO"
+            color: "red"
+            font.pixelSize: 11
+            visible: !appMode
+        }
 
         Loader {
             sourceComponent: sourceComp
             anchors.top: parent.top
-            anchors.topMargin: 40
+            anchors.topMargin: 56
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right

@@ -6,8 +6,9 @@ Item {
     height: 842 // A4 sixe for 72 dpi
 
     property int pageIndex: 0
-    property string title: "Page " + pageIndex
+    property string title: qsTr("Page ") + pageIndex
     property var sourceComp: null
+    property int numberOfSeriesInAPagee: 2
 
     Rectangle {
         anchors.fill: parent
@@ -24,11 +25,24 @@ Item {
             color: "black"
         }
 
+        Image {
+            id: reportLogo
+            source: APPSETTINGS.getBrandLogo()
+            anchors.top: parent.top
+            anchors.topMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            width: 115
+            height: 36
+            fillMode: Image.PreserveAspectFit
+        }
+
+
 
         Rectangle {
             color: "transparent"
             anchors.top: parent.top
-            anchors.topMargin: 40
+            anchors.topMargin: 56
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -39,37 +53,22 @@ Item {
                 anchors.leftMargin: 20
 
                 SeriesComponent {
-                    seriesIndex: (rootItem.pageIndex-2) * 3 + 2 // as series 1 is already in first page
+                    seriesIndex: (rootItem.pageIndex-2) * numberOfSeriesInAPagee + 2 // as series 1 is already in first page
                     width: parent.width
-                    height: 200
+                    height: 800/numberOfSeriesInAPagee
                     visible: (seriesIndex-1)*10 <= globalModelOfData.count
 
                     Component.onCompleted: {
-                        visible = false
-                        visible = (seriesIndex-1)*10 <= globalModelOfData.count
-                        console.log(visible," PDF series page for series ", seriesIndex, " count ", globalModelOfData.count)
+                        update()
                     }
                 }
                 SeriesComponent {
-                    seriesIndex: (rootItem.pageIndex-2) * 3 + 3 // as series 1 is already in first page
+                    seriesIndex: (rootItem.pageIndex-2) * numberOfSeriesInAPagee + 3 // as series 1 is already in first page
                     width: parent.width
-                    height: 200
+                    height: 800/numberOfSeriesInAPagee
                     visible: (seriesIndex-1)*10 <= globalModelOfData.count
                     Component.onCompleted: {
-                        visible = false
-                        visible = (seriesIndex-1)*10 <= globalModelOfData.count
-                        console.log(visible," PDF series page for series ", seriesIndex)
-                    }
-                }
-                SeriesComponent {
-                    seriesIndex: (rootItem.pageIndex-2) * 3 + 4 // as series 1 is already in first page
-                    width: parent.width
-                    height: 200
-                    visible: (seriesIndex-1)*10 <= globalModelOfData.count
-                    Component.onCompleted: {
-                        visible = false
-                        visible = (seriesIndex-1)*10 <= globalModelOfData.count
-                        console.log(visible," PDF series page for series ", seriesIndex)
+                        update()
                     }
                 }
             }

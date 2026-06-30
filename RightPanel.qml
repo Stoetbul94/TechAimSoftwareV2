@@ -1,5 +1,8 @@
-import QtQuick 2.2
-import QtQuick.Dialogs 1.2
+﻿import QtQuick 2.2
+import QtQuick.Dialogs
+
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 
 Item {
     property int rootItemWidth:1674
@@ -9,15 +12,44 @@ Item {
     property int seriesStars : 0
     property int totalTimeConsume: 0
     property int seriesTimeConsume: 0
+    property int currentShootIndex: -1
+    property bool listNavigationON: false
+    property bool isGameLoaded: false // as main.qml isSAveGame not working
 
-    property real star_limit_value: 10.5
+    property real star_limit_value_pistol: 10.4
+    property real star_limit_value_rifle: 10.2
+
+//    property alias isPlayVisible: leftPanel.playVisible
+
+    property int fontForSeries: 14
+    property int fontForMath: 18
+    property int dafaultFontSize: 19
 
     signal switchToSighter(bool sighterEnable)
 
     signal matchFinished()
 
-    function getFormatedScore(calculatedscore) {
-        return calculatedscore.substring(0, calculatedscore.length - 1)
+
+    property alias firstRowX: firstRow.x
+    property alias firstRowY: firstRow.y
+    property alias firstRowWidth: firstRow.width
+    property alias firstRowHeight: firstRow.height
+
+//    function getFormatedScore(calculatedscore) {
+//        return calculatedscore.substring(0, calculatedscore.length)
+//    }
+
+    Connections {
+        target: loginPage
+
+        onSighterStartedFromServer : {
+            pauseClicked()
+        }
+
+        onMatchStartedFromServer : {
+            startClicked()
+        }
+
     }
 
     onCurrentPageIndexChanged:
@@ -46,6 +78,25 @@ Item {
         centerPanel.disableMotorMovement = true
         centerPanel.currentPageIndexChanged()
         centerPanel.disableMotorMovement = false
+
+        centerPanel.refreshGroupRect()
+    }
+
+    onCurrentShootIndexChanged: {
+        if (currentShootIndex < 0 || currentShootIndex >= globalModelOfData.count) {
+            centerPanel.currentScoreValue = -1
+            centerPanel.currentScoreDegree = -1
+            return
+        }
+        centerPanel.currentScoreValue = scoreCutoffTofirstDecimal(globalModelOfData.get(currentShootIndex).calculatedscore)*1
+//        if (centerPanel.currentScoreValue == "nan" || centerPanel.currentScoreValue == "NaN")
+//            centerPanel.currentScoreValue = "0"
+        centerPanel.currentScoreDegree = globalModelOfData.get(currentShootIndex).direction*1
+        if (matchScore.count != 0)
+            centerPanel.refreshSelectedShootPosition()
+
+        console.log(globalModelOfData.count , globalModelOfData.get(currentShootIndex).calculatedscore, " ***srinu ---",matchScore.count, "current shoot index changed", currentShootIndex)
+        console.log(scoreCutoffTofirstDecimal(globalModelOfData.get(currentShootIndex).calculatedscore)*1, " srinu ---",matchScore.count, "current shoot index changed", currentShootIndex)
     }
 
     Image {
@@ -59,7 +110,7 @@ Item {
     }
     Image {
         id: total_score_block
-        source: isDefaultIcon ? "qrc:/images/rightPanel/total_score_block_tachus.png" : "qrc:/images/rightPanel/total_score_block.png"
+        source: /*isDefaultIcon ? "qrc:/images/rightPanel/total_score_block_tachus.png" :*/ "qrc:/images/rightPanel/total_score_block.png"
         x: ((parent.width/rootItemWidth)*0)
         y: ((parent.height/rootItemHeight)*0)
         opacity: 1
@@ -86,12 +137,13 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field_593_2.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.horizontalCenter: text_field.horizontalCenter
         anchors.verticalCenter: text_field_593_2.verticalCenter
+        opacity: 0
     }
 
     Image {
@@ -115,12 +167,13 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field_593_2.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.horizontalCenter: text_field1.horizontalCenter
         anchors.verticalCenter: text_field_593_2.verticalCenter
+        opacity: 0
     }
 
     Image {
@@ -143,11 +196,12 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field_593_2.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.centerIn: text_field_593_2
+        opacity: 0
     }
 
     Image {
@@ -170,11 +224,12 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field_8.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.centerIn: text_field_8
+        opacity: 0
     }
 
     Image {
@@ -197,7 +252,7 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field_1_55.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
@@ -223,11 +278,16 @@ Item {
         height: ((parent.height/rootItemHeight)*text_field2.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.centerIn: text_field2
+
+        onTextChanged: {
+            MODREADER.setTotalScoreWOD(seriesSubTotalED.text)
+            MODREADER.updateSetaShootSummaryData()
+        }
     }
     Image {
         id: field_88_7
@@ -249,11 +309,16 @@ Item {
         height: ((parent.height/rootItemHeight)*field_88_7.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
         anchors.centerIn: field_88_7
+
+        onTextChanged: {
+            MODREADER.setTotalScoreWD(seriesSubTotal.text)
+            MODREADER.updateSetaShootSummaryData()
+        }
     }
 
     Image {
@@ -276,7 +341,7 @@ Item {
         height: ((parent.height/rootItemHeight)*text_filed_3.sourceSize.height)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: (0.45*height)
+        font.pixelSize: (0.55*height)
 
         text: ""
         color: "white"
@@ -314,38 +379,39 @@ Item {
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
         height: ((parent.height/rootItemHeight)*sourceSize.height)
+        visible: false
         MouseArea
         {
             anchors.fill: parent
             onClicked:
             {
-//                stopClicked()
+                //                stopClicked()
             }
         }
     }
-    Image {
-        id: play
-        source: "qrc:/images/rightPanel/play.png"
-        x: ((parent.width/rootItemWidth)*0)
-        y: ((parent.height/rootItemHeight)*1223)
-        opacity: 1
-        width: ((parent.width/rootItemWidth)*sourceSize.width)
-        height: ((parent.height/rootItemHeight)*sourceSize.height)
-        MouseArea
-        {
-            anchors.fill: parent
-            onClicked:
-            {
-                startClicked()
-            }
-        }
-    }
+//    Image {
+//        id: play
+//        source: "qrc:/images/rightPanel/play.png"
+//        x: ((parent.width/rootItemWidth)*0)
+//        y: ((parent.height/rootItemHeight)*1223)
+//        opacity: 1
+//        width: ((parent.width/rootItemWidth)*sourceSize.width)
+//        height: ((parent.height/rootItemHeight)*sourceSize.height)
+//        MouseArea
+//        {
+//            anchors.fill: parent
+//            onClicked:
+//            {
+//                startClicked()
+//            }
+//        }
+//    }
     Image {
         id: pause_over
         source: "qrc:/images/rightPanel/pause_over.png"
         x: ((parent.width/rootItemWidth)*0)
         y: ((parent.height/rootItemHeight)*1223)
-        opacity: 1
+        opacity: 0
         width: ((parent.width/rootItemWidth)*sourceSize.width)
         height: ((parent.height/rootItemHeight)*sourceSize.height)
         visible: false
@@ -353,27 +419,31 @@ Item {
         {
             anchors.fill: parent
             onClicked: {
-//                pauseClicked()
+                //                pauseClicked()
             }
         }
     }
     Image {
         id: num
         source: "qrc:/images/rightPanel/num.png"
-        x: ((parent.width/rootItemWidth)*400)
-        y: ((parent.height/rootItemHeight)*347)
         opacity: 1
-        width: ((parent.width/rootItemWidth)*sourceSize.width)
+        width: ((parent.width/rootItemWidth)*sourceSize.width)*1.2
         height: ((parent.height/rootItemHeight)*sourceSize.height)
+        x: ((parent.width/rootItemWidth)*400) - width*0.1
+        y: ((parent.height/rootItemHeight)*347)
     }
     Image {
         id: series_6
         source: "qrc:/images/rightPanel/series_6.png"
-        x: ((parent.width/rootItemWidth)*400)
-        y: ((parent.height/rootItemHeight)*131)
+        anchors.left: left_arrow.right
+        anchors.right: right.left
+        anchors.top: left_arrow.top
+        anchors.bottom: left_arrow.bottom
+//        x: ((parent.width/rootItemWidth)*400)
+//        y: ((parent.height/rootItemHeight)*131)
         opacity: 1
-        width: ((parent.width/rootItemWidth)*sourceSize.width)
-        height: ((parent.height/rootItemHeight)*sourceSize.height)
+//        width: ((parent.width/rootItemWidth)*sourceSize.width)
+//        height: ((parent.height/rootItemHeight)*sourceSize.height)
         visible: true
     }
 
@@ -381,25 +451,26 @@ Item {
         id: series_text_field
         source: "qrc:/images/rightPanel/series_text_field.png"
         x: ((parent.width/rootItemWidth)*970)
-        y: ((parent.height/rootItemHeight)*168)
+        y: ((parent.height/rootItemHeight)*170)
         opacity: 0
         width: ((parent.width/rootItemWidth)*sourceSize.width)
         height: ((parent.height/rootItemHeight)*sourceSize.height)
     }
     Text {
         id: seriesText
-        anchors.top: series_text_field.top
+        anchors.bottom: series_text_field.bottom
+        anchors.bottomMargin: -5
         anchors.left: series_text_field.left
-        anchors.topMargin: -3
-//        anchors.horizontalCenter: series_text_field.horizontalCenter
+        //anchors.topMargin: -3
+        //        anchors.horizontalCenter: series_text_field.horizontalCenter
         text : (currentPageIndex+1)
         color: "white"
-        font.pixelSize: 13
+        font.pixelSize: dafaultFontSize
     }
     Image {
         id: right
         source: "qrc:/images/rightPanel/right.png"
-        x: ((parent.width/rootItemWidth)*1408)
+        x: ((parent.width/rootItemWidth)*1408) + num.width*0.07
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -417,7 +488,7 @@ Item {
     Image {
         id: right_end
         source: "qrc:/images/rightPanel/right_end.png"
-        x: ((parent.width/rootItemWidth)*1408)
+        x: ((parent.width/rootItemWidth)*1408) + num.width*0.07
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -435,7 +506,7 @@ Item {
     Image {
         id: right_over
         source: "qrc:/images/rightPanel/right_over.png"
-        x: ((parent.width/rootItemWidth)*1408)
+        x: ((parent.width/rootItemWidth)*1408) + num.width*0.07
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -453,7 +524,7 @@ Item {
     Image {
         id: left_arrow
         source: "qrc:/images/rightPanel/left_arrow.png"
-        x: ((parent.width/rootItemWidth)*297)
+        x: ((parent.width/rootItemWidth)*297) - num.width*0.1
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -471,7 +542,7 @@ Item {
     Image {
         id: left_arrow_end
         source: "qrc:/images/rightPanel/left_arrow_end.png"
-        x: ((parent.width/rootItemWidth)*297)
+        x: ((parent.width/rootItemWidth)*297) - num.width*0.1
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -489,7 +560,7 @@ Item {
     Image {
         id: left_arrow_over
         source: "qrc:/images/rightPanel/left_arrow_over.png"
-        x: ((parent.width/rootItemWidth)*297)
+        x: ((parent.width/rootItemWidth)*297) - num.width*0.1
         y: ((parent.height/rootItemHeight)*131)
         opacity: 1
         width: ((parent.width/rootItemWidth)*sourceSize.width)
@@ -513,6 +584,34 @@ Item {
     property bool minPreviewMode: true
     property int timeInSec: 0
     property int lastUsedTime: 0
+    property int lastShotElapsed: 0
+    property string lastShotTimestamp: ""
+
+
+    function resetTimer() {
+        timeInSec = 0;
+        lastUsedTime = MATCHSESSION.usesOfficialTiming && !sligterMode
+                ? MATCHSESSION.matchElapsed
+                : (MATCHSESSION.sighterMode ? MATCHSESSION.preparationElapsed : 0);
+        console.log("------------------------------------------timer reset------------------------------------------")
+    }
+
+    function prepareModeTransition()
+    {
+        listNavigationON = false
+        listModel.clear()
+        matchScore.currentIndex = -1
+        currentShootIndex = -1
+        currentPageIndex = 0
+        subTotal = 0
+        subTotalExculdeDec = 0
+        seriesTimeConsume = 0
+        lastUsedTime = MATCHSESSION.usesOfficialTiming && !sligterMode
+                ? MATCHSESSION.matchElapsed
+                : (MATCHSESSION.sighterMode ? MATCHSESSION.preparationElapsed : timeInSec)
+        enableLeftNavigation(false)
+        enableRightNavigation(false)
+    }
 
     ListModel {
         id:listModel
@@ -558,7 +657,14 @@ Item {
                 var direction = listModel.get(count-1).direction;
                 var score = listModel.get(count-1).calculatedscore
                 console.log(direction, "-------------------", score)
+                currentIndex = count - 1
             }
+        }
+
+        onCurrentIndexChanged: {
+            console.log(count, "right list view current index", currentIndex)
+            currentShootIndex = currentIndex < 0
+                    ? -1 : currentIndex + (currentPageIndex*10)
         }
     }
 
@@ -581,7 +687,7 @@ Item {
                 id: currentItem
                 anchors.fill: parent
                 color: "#A6CE72"
-                visible: (right_end.visible) && (index === (globalModelOfData.count-1)%10)
+                visible: matchScore.currentIndex == index //(right_end.visible) && (index === (globalModelOfData.count-1)%10)
             }
 
             Rectangle {
@@ -594,6 +700,7 @@ Item {
                 Text {
                     text: currentPageIndex*10 + index + 1
                     anchors.centerIn: parent
+                    font.pixelSize: 0.65*currentItem.height
                 }
             }
 
@@ -618,19 +725,6 @@ Item {
                     Component.onCompleted:
                     {
                         rotation = direction
-//                        if(direction === 0.00 || direction === 360.00 || direction === 90.00 ||
-//                                direction === 180.00 || direction === 270.00)
-//                        {
-//                            rotation = direction
-//                        } else if(direction > 0 && direction < 90 ) {
-//                            rotation = 45
-//                        } else if(direction > 90 && direction < 180 ) {
-//                            rotation = 135
-//                        } else if(direction > 180 && direction < 270 ) {
-//                            rotation = 225
-//                        } else if(direction > 270 && direction < 360 ) {
-//                            rotation = 315
-//                        }
                     }
                 }
 
@@ -647,7 +741,8 @@ Item {
                         id: scoreText
                         anchors.centerIn: parent
 
-                        text: getFormatedScore(calculatedscore)
+                        text: formatLiveShotScore(calculatedscore)
+                        font.pixelSize: 0.65*currentItem.height
                     }
                 }
 
@@ -658,7 +753,7 @@ Item {
                     anchors.left: arrowImage.right
                     anchors.leftMargin: 10
 
-                    visible: score >= star_limit_value
+                    visible: loginPage.gameMode == 0 ? (score >= star_limit_value_pistol) : (score >= star_limit_value_rifle)
                     source: "qrc:/images/rightPanel/star.png"
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -674,7 +769,15 @@ Item {
                         id: timeText
                         anchors.centerIn: parent
                         text: timeComsumed
+                        font.pixelSize: 0.65*currentItem.height
                     }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    matchScore.currentIndex = index
                 }
             }
         }
@@ -700,37 +803,56 @@ Item {
     function addToSeries(angle,radius,calScore)
     {
         var relativeVal = (10 - radius) > 0 ? 10 - radius : 0
-        grandTotal = ( grandTotal*1 + calScore.toFixed(1)*1)
-        grandTotalExculdeDec = ( grandTotalExculdeDec*1 + Math.floor(calScore))
-        totalTimeConsume = totalTimeConsume*1 + (timeInSec - lastUsedTime)
+        grandTotal = grandTotal * 1 + calScore * 1
+        grandTotalExculdeDec = grandTotalExculdeDec * 1 + Math.floor(calScore)
 
-        var text = timeInSec - lastUsedTime
-        lastUsedTime = timeInSec
+        var text = isGameLoaded ? centerPanel.curShootTimeSavedGame
+                : (MATCHSESSION.usesOfficialTiming && !sligterMode)
+                    ? Math.max(1, MATCHSESSION.matchElapsed - lastUsedTime)
+                    : Math.max(1, timeInSec - lastUsedTime)
+        totalTimeConsume = totalTimeConsume*1 + Number(text)
+        console.log(timeInSec+"---"+lastUsedTime+"---"+text+" matchinfo------------------------------------------1-----------------"+centerPanel.curShootTimeSavedGame+ "***********"+isGameLoaded)
+        lastUsedTime = (MATCHSESSION.usesOfficialTiming && !sligterMode)
+                ? MATCHSESSION.matchElapsed
+                : (MATCHSESSION.sighterMode ? MATCHSESSION.preparationElapsed : timeInSec)
+        MODREADER.appendTimeConsumed(text)
+        MODREADER.appendShotDirection(angle.toFixed(2))
+
+        var timeStampString = isGameLoaded ? centerPanel.curShootTimeStampSavedGame :new Date().toLocaleTimeString(Qt.locale("en-US"),"HH:mm:ss")
+        lastShotElapsed = Number(text)
+        lastShotTimestamp = timeStampString
+        MODREADER.appendTimeStamp(timeStampString)
+
         //        globalModelOfData.append({"direction":angle.toFixed(2), "score":radius.toFixed(2),  "timeComsumed":text})
         if(sligterMode)
         {
             globalSlighterModel.append({"direction":angle.toFixed(2)
-                                       ,"score":radius.toFixed(2)/*radius.toFixed(2)*/
-                                       ,"timeComsumed":text
-                                       ,"calculatedscore":calScore.toFixed(2)})
+                                           ,"score":radius.toFixed(2)/*radius.toFixed(2)*/
+                                           ,"timeComsumed":text
+                                           ,"calculatedscore":calScore})
+            console.log("Shreeraksha-----",APPSETTINGS.getScoringSystem())
         }
         else
         {
             globalMatchModel.append({"direction":angle.toFixed(2)
-                                    ,"score":radius.toFixed(2)/*radius.toFixed(2)*/
-                                    ,"timeComsumed":text
-                                    ,"calculatedscore":calScore.toFixed(2)})
+                                        ,"score":radius.toFixed(2)/*radius.toFixed(2)*/
+                                        ,"timeComsumed":text
+                                        ,"calculatedscore":calScore
+                                        ,"timestamp":timeStampString})
         }
         globalModelOfData.append({"direction":angle.toFixed(2)
-                                 ,"score":radius.toFixed(2)/*radius.toFixed(2)*/,  "timeComsumed":text
-                                 ,"calculatedscore":calScore.toFixed(2)})
+                                     ,"score":radius.toFixed(2)/*radius.toFixed(2)*/,  "timeComsumed":text
+                                     ,"calculatedscore":calScore})
 
+        console.log("$$$$$$$$$$$$ calscore ", calScore)
+        console.log("index ",globalModelOfData.count, " timestamp ", globalModelOfData)
         matchScore.model =listModel
         if(minPreviewMode && radius > 4)
         {
             minPreviewMode = false
         }
-        if(calScore >= star_limit_value)
+        if( (loginPage.gameMode === 0 && calScore >= star_limit_value_pistol)
+                || (loginPage.gameMode === 1 && calScore >= star_limit_value_rifle) )
             ++totalStars
         var startIndex = Math.floor((globalModelOfData.count-1)/10)
         var endIndex = globalModelOfData.count;
@@ -741,6 +863,10 @@ Item {
     function updateListModel(startIndex,endIndex)
     {
         listModel.clear()
+        console.log("inside updateListModel")
+        if (listNavigationON)
+            matchScore.model = 0 //used in Qt 5.13
+        console.log("inside updateListModel model assign to empty")
         subTotal = subTotal*0
         subTotalExculdeDec = subTotalExculdeDec*0
         seriesStars = 0
@@ -754,30 +880,43 @@ Item {
             var timeConsumed = globalModelOfData.get(i).timeComsumed
             var calculatedScore = globalModelOfData.get(i).calculatedscore
 
-            listModel.append({"direction":direction.toFixed(2), "score":relativeVal.toFixed(2), "timeComsumed":timeConsumed, "calculatedscore":calculatedScore})
-            subTotal = ( subTotal*1 + relativeVal.toFixed(1)*1)
+            listModel.append({"direction":direction.toFixed(2),
+                                 "score":relativeVal.toFixed(2),
+                                 "timeComsumed":timeConsumed,
+                                 "calculatedscore":calculatedScore,})
+            console.log("index ",i," before addition ----------------------", subTotal, " timestamp ", timeConsumed)
+            subTotal = /*Math.round*//*scoreCutoffTofirstDecimal*/( subTotal + (calculatedScore)*1)
+            console.log("index ",i," score test----------------------", subTotal, " curScore ", calculatedScore)
             //            subTotalExculdeDec = ( subTotalExculdeDec*1 + relativeVal.toFixed(0)*1)
-            subTotalExculdeDec = ( subTotalExculdeDec*1 + Math.floor(relativeVal))
+            subTotalExculdeDec = ( subTotalExculdeDec*1 + Math.floor(calculatedScore))
             seriesTimeConsume = (seriesTimeConsume + timeConsumed)
-            if(relativeVal >= star_limit_value)
+            if((loginPage.gameMode === 0 && relativeVal >= star_limit_value_pistol)
+                    || (loginPage.gameMode === 1 && relativeVal >= star_limit_value_rifle) )
                 ++seriesStars
         }
+        matchScore.model = listModel
+        console.log("inside updateListModel reassigning the model")
         currentPageIndex = Math.floor( (endIndex-1)/10)
+        console.log("inside updateListModel pageindex changed")
 
         //Log messages
         grandStarText.text = totalStars
-        seriesStarText.text =  seriesStars
-        seriesSubTotal.text = subTotal.toFixed(1)*1
-        seriesSubTotalED.text = subTotalExculdeDec.toFixed(0)*1
-        grandTotalText.text = grandTotal.toFixed(1)*1
+        seriesStarText.text =  totalStars //seriesStars
+        seriesSubTotal.text = scoreCutoffTofirstDecimal(grandTotal)*1 //scoreCutoffTofirstDecimal(subTotal)*1
+        seriesSubTotalED.text = grandTotalExculdeDec.toFixed(0)*1 //subTotalExculdeDec.toFixed(0)*1
+        grandTotalText.text = scoreCutoffTofirstDecimal(grandTotal)*1
         grandTotalED.text = grandTotalExculdeDec.toFixed(0)*1
         var formatedTime = minutesToseconds(seriesTimeConsume)
         seriesTime.text = formatedTime//(seriesTimeConsume*1/60).toFixed(1)
+        totalTimeConsume = isGameLoaded ? centerPanel.totalTimeSavedGame : totalTimeConsume
         totalTime.text =  minutesToseconds(totalTimeConsume)//(totalTimeConsume*1/60).toFixed(1)
+
+        console.log("last line updateListModel")
     }
 
     function leftClicked()
     {
+        listNavigationON = true
         --currentPageIndex
         var maxPageIndex = Math.floor(globalModelOfData.count/10)
         var startIndex = currentPageIndex*10
@@ -787,10 +926,12 @@ Item {
             endIndex = globalModelOfData.count
         }
         updateListModel(startIndex,endIndex)
+        listNavigationON = false
     }
 
     function rightClicked()
     {
+        listNavigationON = true
         ++currentPageIndex
         var maxPageIndex = Math.floor(globalModelOfData.count/10)
         var startIndex = currentPageIndex*10
@@ -798,6 +939,7 @@ Item {
         if(endIndex >= globalModelOfData.count)
             endIndex = globalModelOfData.count
         updateListModel(startIndex,endIndex)
+        listNavigationON = true
     }
 
     function updateTotal()
@@ -825,22 +967,23 @@ Item {
             var direction = globalModelOfData.get(i).direction*1
             var timeConsumed = globalModelOfData.get(i).timeComsumed
 
-            grandTotal = ( grandTotal*1 + relativeVal.toFixed(1)*1)
+            grandTotal = ( grandTotal*1 + scoreCutoffTofirstDecimal(relativeVal)*1)
             grandTotalExculdeDec = ( grandTotalExculdeDec*1 + Math.floor(relativeVal))
-            totalTimeConsume = totalTimeConsume*1 + (timeInSec - lastUsedTime)
+            totalTimeConsume = totalTimeConsume*1 + Number(timeConsumed)
 
             if(relativeVal > 10)
                 ++totalStars
         }
         grandStarText.text = totalStars
         seriesStarText.text =  seriesStars
-        seriesSubTotal.text = subTotal.toFixed(1)*1
-        seriesSubTotalED.text = subTotalExculdeDec.toFixed(0)*1
-        grandTotalText.text = grandTotal.toFixed(1)*1
-        grandTotalED.text = grandTotalExculdeDec.toFixed(0)*1
+        seriesSubTotal.text = scoreCutoffTofirstDecimal(subTotal)*1
+        seriesSubTotalED.text = scoreCutoffTofirstDecimal(subTotalExculdeDec)*1
+        grandTotalText.text = scoreCutoffTofirstDecimal(grandTotal)*1
+        grandTotalED.text = scoreCutoffTofirstDecimal(grandTotalExculdeDec)*1
         seriesTime.text = minutesToseconds(seriesTimeConsume)//(seriesTimeConsume*1 / 60).toFixed(1)
         totalTime.text = minutesToseconds(totalTimeConsume)//(totalTimeConsume*1 / 60).toFixed(1)
 
+        console.log("-----------------------------------------------------------"+scoreCutoffTofirstDecimal(subTotal))
     }
 
     function enableLeftNavigation(showFlag)
@@ -888,7 +1031,7 @@ Item {
     function pauseClicked()
     {
         switchToSighter(true)
-        play.visible = true
+        leftPanel.playVisible = true
         pause_over.visible = false
     }
 
@@ -902,13 +1045,618 @@ Item {
 
     function startClicked()
     {
+        if (MATCHSESSION.phaseName === "Preparation and Sighting")
+            MATCHSESSION.finishPreparation()
+        if (MATCHSESSION.phaseName === "Ready for Match"
+                || MATCHSESSION.phaseName === "Prone Changeover / Sighting"
+                || MATCHSESSION.phaseName === "Standing Changeover / Sighting")
+            MATCHSESSION.startMatch()
+        resetTimer()
         switchToSighter(false)
+        centerPanel.syncTimersFromSession()
+        centerPanel.resumeSessionTimers()
         pause_over.visible = true
-        play.visible = false
+        leftPanel.playVisible = false
     }
+
+    function startClickedThroughLoad()
+    {
+        pause_over.visible = true
+        leftPanel.playVisible = false
+    }
+
 
     function restartClicked()
     {
-//        stop_over.
+        //        stop_over.
+    }
+
+    // png text for translation
+    Text {
+        anchors.right: seriesText.left
+        anchors.rightMargin: 5
+        anchors.top: seriesText.top
+        //anchors.horizontalCenter: parent.horizontalCenter
+        text: qsTr("SERIES")
+        color: "white"
+        width: implicitWidth
+        height: implicitHeight
+        font.pixelSize: dafaultFontSize
+    }
+    Text {
+        anchors.left: series_6.left
+        anchors.leftMargin: 10
+        anchors.bottom: series_6.bottom
+        //anchors.bottomMargin: 4
+        color: "white"
+        width: implicitWidth
+        height: implicitHeight
+        text: qsTr("SN")
+        font.pixelSize: dafaultFontSize
+    }
+    Text {
+        anchors.left: series_6.left
+        anchors.leftMargin: 70
+        anchors.bottom: series_6.bottom
+        //anchors.bottomMargin: 4
+        color: "white"
+        width: implicitWidth
+        height: implicitHeight
+        text: qsTr("Score")
+        font.pixelSize: dafaultFontSize
+    }
+    Text {
+        anchors.right: series_6.right
+        anchors.rightMargin: 25
+        anchors.bottom: series_6.bottom
+        //anchors.bottomMargin: 4
+        color: "white"
+        width: implicitWidth
+        height: implicitHeight
+        text: qsTr("Time (s)")
+        font.pixelSize: dafaultFontSize
+    }
+    Rectangle {
+        id: midRect
+        anchors.left: field_88_7.left
+        anchors.right: text_field2.right
+        anchors.bottom: text_field2.top
+        height: text_field2.height + 8
+        color: "transparent"
+
+        Rectangle {
+            anchors.top: parent.top
+            width: parent.width
+            height: parent.height/2
+            color: "transparent"
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+                color: "white"
+                width: implicitWidth
+                height: implicitHeight
+                text: qsTr("TOTAL SCORE")
+                font.pixelSize: dafaultFontSize
+            }
+        }
+        Rectangle {
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: parent.height/2
+            color: "transparent"
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+                color: "white"
+                width: implicitWidth
+                height: implicitHeight
+                text: qsTr("Match Performance")
+                font.pixelSize: dafaultFontSize
+            }
+        }
+    }
+
+    Rectangle {
+        width: text_field_1_55.width
+        anchors.left: midRect.right
+        anchors.top: midRect.top
+        height: midRect.height/2
+        color: "transparent"
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            color: "white"
+            width: implicitWidth
+            height: implicitHeight
+            text: qsTr("Time (m)")
+            font.pixelSize: dafaultFontSize
+        }
+    }
+
+    Rectangle {
+        anchors.left: field_88_7.left
+        anchors.right: text_field2.right
+        anchors.top: text_field2.bottom
+        height: midRect.height/2
+        color: "transparent"
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            color: "white"
+            width: implicitWidth
+            height: implicitHeight
+            text: qsTr("MatchOLd Performance")
+        }
+    }
+
+    function startFromServer()
+    {
+        leftPanel.playVisible = false;
+    }
+
+
+    // for series Sum
+    Rectangle {
+        id: series_sum
+//        source: "qrc:/images/rightPanel/series_6.png"
+        anchors.left: text_field_8.left
+        anchors.right: text_field.right
+        anchors.rightMargin: text_field.width*0.07
+        anchors.top: text_field2.bottom
+        anchors.bottom: total_score_block.bottom
+        anchors.bottomMargin: 30
+        opacity: 1
+        //height: series_6.height*1.5
+        visible: true
+        color: "red"
+
+        Row {
+            id: firstRow
+            anchors.top: parent.top
+            Repeater {
+                model: 6
+                Rectangle {
+                    width: series_sum.width/6; height: series_sum.height/5*1
+                    //border.width: 1
+                    color: "#373536"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "S"+(index+1)
+                        color: "white"
+                        font.pixelSize: dafaultFontSize
+                    }
+                }
+            }
+        }
+
+        Column {
+            anchors.top: firstRow.bottom
+            anchors.bottom: parent.bottom
+            Row {
+                id: secondRow
+                Repeater {
+                    model: 6
+                    Rectangle {
+                        width: series_sum.width/6; height: series_sum.height/5*2
+                        border.width: 1
+                        border.color: "lightgrey"
+                        color:/*"blue" //*/"#312E2F"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: isValidSeries(index) ? getSeriesTotal(index+1) : ""
+                            color: "white"
+                            font.pointSize: parent.height*0.25 //parent.height*0.3
+//                            font.pointSize: isSingleDecimal ? parent.height*0.37 : parent.height*0.32
+//                            font.bold: true
+
+                            onTextChanged: {
+                                var textLength = text.length
+                                if (textLength == 5)
+                                    font.pointSize = parent.height*0.2
+                                console.log("sssssssssssssssssssssssssssssssssssss-------------------", textLength)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Row {
+                id: thirdRow
+                Repeater {
+                    model: 6
+                    Rectangle {
+                        width: series_sum.width/6; height: series_sum.height/5*2
+                        border.width: 1
+                        color: "#312E2F"
+                        border.color: "white"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: isValidSeries(index) ? /*"("+*/getSeriesTotalNonDecimal(index+1)/*+")"*/ : ""
+                            color: "white"
+                            font.pointSize: parent.height*0.25//parent.height*0.3
+//                            font.bold: true
+
+                            onTextChanged: {
+                                //update the backend variables and file
+                                if (isValidSeries(index)) {
+                                    MODREADER.updateSeriesScore(index+1, getSeriesTotalNonDecimal(index+1))
+                                    MODREADER.updateSeriesScoreWD(index+1, (getSeriesTotal(index+1)))
+                                    MODREADER.setTotalScoreWOD(seriesSubTotalED.text)
+                                    MODREADER.setTotalScoreWD(seriesSubTotal.text)
+                                    MODREADER.updateSetaShootSummaryData()
+
+//                                    seriesSubTotal.text = scoreCutoffTofirstDecimal(grandTotal)*1 //scoreCutoffTofirstDecimal(subTotal)*1
+//                                    seriesSubTotalED.text = grandTotalExculdeDec.toFixed(0)*1 //subTotalExculdeDec.toFixed(0)*1
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            x: firstRowX
+            y: firstRowY
+            width: firstRowWidth
+            height: firstRowHeight
+            color: "transparent"
+            border.width: 1
+            border.color: "grey"
+        }
+    }
+
+    function isValidSeries(index) {
+        if (currentShootIndex >= index*10)
+            return true
+        else
+            return false
+    }
+
+    function getSeriesTotal(seriesIndex)
+    {
+        if(globalModelOfData.count === 0)
+            return 0
+        var seriesScore = 0
+        for(var i=(seriesIndex-1)*10; i<globalModelOfData.count; i++)
+        {
+            if (i >=seriesIndex*10)
+                break;
+
+            var scoreatIndex = globalModelOfData.get(i).calculatedscore*1
+            seriesScore = seriesScore*1  +  (scoreatIndex.toFixed(1))*1
+            //            console.log("Total score and score at current Index is",seriesScore,scoreatIndex)
+
+        }
+        //return isSingleDecimal ? seriesScore.toFixed(1) : scoreCutoffTofirstDecimal(seriesScore)
+        return seriesScore.toFixed(1)
+    }
+
+    function getSeriesTotalNonDecimal(seriesIndex)
+    {
+        if(globalModelOfData.count === 0)
+            return 0
+        var seriesScore = 0
+        for(var i=(seriesIndex-1)*10; i<globalModelOfData.count; i++)
+        {
+            if (i >=seriesIndex*10)
+                break;
+
+            var scoreatIndex = Math.floor(globalModelOfData.get(i).calculatedscore*1)
+            seriesScore = seriesScore*1  +  (scoreatIndex)*1
+        }
+        return seriesScore
+    }
+
+    function rangeTotal(startIndex, count, integerMode)
+    {
+        if (count <= 0)
+            return 0
+        var total = 0
+        var endIndex = Math.min(globalMatchModel.count, startIndex + count)
+        for (var i = startIndex; i < endIndex; ++i) {
+            var value = Number(globalMatchModel.get(i).calculatedscore)
+            total += integerMode ? Math.floor(value) : value
+        }
+        return total
+    }
+
+    function positionTotal(startIndex, count)
+    {
+        if (count <= 0)
+            return "—"
+        var position = startIndex === 0 && MATCHSESSION.kneelingShotLimit > 0
+                ? "Kneeling"
+                : startIndex === MATCHSESSION.kneelingShotLimit
+                  ? "Prone" : "Standing"
+        if (MATCHSESSION.decimalScoring)
+            return MATCHSESSION.scoreTotalFor(position).toFixed(1)
+        return MATCHSESSION.integerTotalFor(position).toFixed(0)
+    }
+
+    function positionIntegerTotal(startIndex, count)
+    {
+        if (count <= 0)
+            return "—"
+        var position = startIndex === 0 && MATCHSESSION.kneelingShotLimit > 0
+                ? "Kneeling"
+                : startIndex === MATCHSESSION.kneelingShotLimit
+                  ? "Prone" : "Standing"
+        return MATCHSESSION.integerTotalFor(position).toFixed(0)
+    }
+
+    function seriesTotal(seriesIndex)
+    {
+        var total = rangeTotal(seriesIndex * 10, 10, false)
+        return total.toFixed(1)
+    }
+
+    function seriesIntegerTotal(seriesIndex)
+    {
+        return rangeTotal(seriesIndex * 10, 10, true).toFixed(0)
+    }
+
+    function seriesGridScore(seriesIndex)
+    {
+        return MATCHSESSION.decimalScoring
+                ? seriesTotal(seriesIndex)
+                : seriesIntegerTotal(seriesIndex)
+    }
+
+    Rectangle {
+        id: modernDashboard
+        anchors.fill: parent
+        z: 100
+        color: "#11171d"
+        border.color: "#2c3640"
+        border.width: 1
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Text {
+                        text: qsTr("SHOT LOG")
+                        color: "#f7f9fb"
+                        font.pixelSize: 17
+                        font.weight: Font.DemiBold
+                    }
+
+                    Text {
+                        text: qsTr("Series %1 • shots %2–%3")
+                              .arg(currentPageIndex + 1)
+                              .arg(currentPageIndex * 10 + 1)
+                              .arg(currentPageIndex * 10 + 10)
+                        color: "#929eaa"
+                        font.pixelSize: 11
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 92
+                    Layout.preferredHeight: 30
+                    radius: 15
+                    color: sligterMode ? "#163b48" : "#421728"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: sligterMode ? qsTr("SIGHTER") : qsTr("MATCH")
+                        color: sligterMode ? "#73d8ff" : "#ff6c9e"
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 13
+                color: "#171e25"
+                border.color: "#303b47"
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 4
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 28
+
+                        Text { text: "#"; color: "#7f8b97"; font.pixelSize: 10; Layout.preferredWidth: 28 }
+                        Text { text: qsTr("SCORE"); color: "#7f8b97"; font.pixelSize: 10; Layout.fillWidth: true }
+                        Text { text: qsTr("TIME (S)"); color: "#7f8b97"; font.pixelSize: 10; Layout.preferredWidth: 78; horizontalAlignment: Text.AlignRight }
+                    }
+
+                    ListView {
+                        id: modernShotList
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        spacing: 5
+                        model: listModel
+                        currentIndex: matchScore.currentIndex
+
+                        delegate: Rectangle {
+                            width: modernShotList.width
+                            height: Math.max(42, modernShotList.height / 10 - 5)
+                            radius: 8
+                            color: modernShotList.currentIndex === index
+                                   ? "#3a1830" : "#202832"
+                            border.color: modernShotList.currentIndex === index
+                                          ? "#e31b54" : "#2e3944"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+
+                                Text {
+                                    text: currentPageIndex * 10 + index + 1
+                                    color: "#aeb8c4"
+                                    font.pixelSize: 12
+                                    Layout.preferredWidth: 28
+                                }
+
+                                Text {
+                                    text: formatLiveShotScore(calculatedscore)
+                                    color: "#ffffff"
+                                    font.pixelSize: 19
+                                    font.weight: Font.DemiBold
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: Number(timeComsumed).toFixed(0)
+                                    color: "#c5ced8"
+                                    font.pixelSize: 13
+                                    horizontalAlignment: Text.AlignRight
+                                    Layout.preferredWidth: 78
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: matchScore.currentIndex = index
+                            }
+                        }
+                    }
+                }
+            }
+
+            GridLayout {
+                Layout.fillWidth: true
+                columns: 6
+                columnSpacing: 5
+
+                Repeater {
+                    model: 6
+
+                    delegate: Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 46
+                        radius: 8
+                        color: index === currentPageIndex ? "#421728" : "#202832"
+                        border.color: index === currentPageIndex ? "#e31b54" : "#303b47"
+
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 2
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "S" + (index + 1)
+                                color: "#929eaa"
+                                font.pixelSize: 9
+                            }
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: seriesGridScore(index)
+                                color: "white"
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 188
+                radius: 11
+                color: "#171e25"
+                border.color: "#303b47"
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 2
+
+                    Repeater {
+                        model: [
+                            { label: qsTr("SERIES TOTAL"), value: MATCHSESSION.decimalScoring ? seriesTotal(currentPageIndex) : seriesIntegerTotal(currentPageIndex), integer: MATCHSESSION.decimalScoring ? seriesIntegerTotal(currentPageIndex) : "" },
+                            { label: qsTr("KNEELING TOTAL"), value: MATCHSESSION.decimalScoring ? positionTotal(0, MATCHSESSION.kneelingShotLimit) : positionIntegerTotal(0, MATCHSESSION.kneelingShotLimit), integer: MATCHSESSION.decimalScoring ? positionIntegerTotal(0, MATCHSESSION.kneelingShotLimit) : "" },
+                            { label: qsTr("PRONE TOTAL"), value: MATCHSESSION.decimalScoring ? positionTotal(MATCHSESSION.kneelingShotLimit, MATCHSESSION.proneShotLimit) : positionIntegerTotal(MATCHSESSION.kneelingShotLimit, MATCHSESSION.proneShotLimit), integer: MATCHSESSION.decimalScoring ? positionIntegerTotal(MATCHSESSION.kneelingShotLimit, MATCHSESSION.proneShotLimit) : "" },
+                            { label: qsTr("STANDING TOTAL"), value: MATCHSESSION.decimalScoring ? positionTotal(MATCHSESSION.kneelingShotLimit + MATCHSESSION.proneShotLimit, MATCHSESSION.standingShotLimit) : positionIntegerTotal(MATCHSESSION.kneelingShotLimit + MATCHSESSION.proneShotLimit, MATCHSESSION.standingShotLimit), integer: MATCHSESSION.decimalScoring ? positionIntegerTotal(MATCHSESSION.kneelingShotLimit + MATCHSESSION.proneShotLimit, MATCHSESSION.standingShotLimit) : "" },
+                            { label: qsTr("MATCH TOTAL"), value: MATCHSESSION.decimalScoring ? scoreCutoffTofirstDecimal(grandTotal) : Math.floor(grandTotalExculdeDec).toFixed(0), integer: MATCHSESSION.decimalScoring ? Math.floor(grandTotalExculdeDec) : "" },
+                            { label: qsTr("TIME"), value: minutesToseconds(MATCHSESSION.matchElapsed), integer: "" }
+                        ]
+
+                        delegate: RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            Text {
+                                text: modelData.label
+                                color: "#929eaa"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                            }
+                            Text {
+                                text: modelData.value
+                                color: "white"
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                                Layout.preferredWidth: 62
+                                horizontalAlignment: Text.AlignRight
+                            }
+                            Text {
+                                text: modelData.integer === "" ? "" : "(" + modelData.integer + ")"
+                                color: "#929eaa"
+                                font.pixelSize: 10
+                                Layout.preferredWidth: 42
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Button {
+                    text: "‹"
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 44
+                    enabled: currentPageIndex > 0
+                    onClicked: leftClicked()
+                }
+
+                Button {
+                    text: MATCHSESSION.phaseName === "Prone Changeover / Sighting"
+                          ? qsTr("Start prone")
+                          : (MATCHSESSION.phaseName === "Standing Changeover / Sighting"
+                             ? qsTr("Start standing")
+                             : (sligterMode ? qsTr("Start match") : qsTr("Pause")))
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 44
+                    onClicked: sligterMode ? startClicked() : pauseClicked()
+                }
+
+                Button {
+                    text: "›"
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 44
+                    enabled: currentPageIndex < Math.floor((globalModelOfData.count - 1) / 10)
+                    onClicked: rightClicked()
+                }
+            }
+        }
     }
 }

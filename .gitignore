@@ -1,0 +1,25 @@
+# Local / machine-specific
+config.ini
+*.pro.user
+*.user
+
+# Build outputs
+release/
+debug/
+tests/build_*/
+*.exe
+*.dll
+*.o
+*.obj
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Archives and temp assets
+*.7z
+images/temp/
+images/New folder.7z
+
+# OS
+Thumbs.db
+.DS_Store
